@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>W1nDoxx - Майстерня Плагінів</title>
+	<link rel="icon" type="image/png" href="hygiene_6902603.png">
+    <style>
+        :root {
+            --bg: #16161a; --card: #242629; --text: #fffffe; --subtext: #94a1b2; --accent: #2cb67d; /* Зелений для Dev */
+        }
+        body { margin: 0; font-family: 'Consolas', 'Segoe UI', monospace; background: var(--bg); color: var(--text); }
+        
+        nav { display: flex; justify-content: space-between; padding: 20px 50px; align-items: center; border-bottom: 1px solid #333; }
+        .logo { font-size: 1.5rem; font-weight: bold; color: var(--text); text-decoration: none; font-family: 'Segoe UI', sans-serif; }
+        .nav-links a { color: var(--subtext); text-decoration: none; margin-left: 20px; transition: 0.3s; font-family: 'Segoe UI', sans-serif; }
+        .nav-links a:hover, .nav-links a.active { color: var(--accent); }
+
+        .container { max-width: 900px; margin: 0 auto; padding: 60px 20px; }
+        
+        .ai-box {
+            background: #1e1e24; padding: 40px; border-radius: 15px; border: 1px solid var(--accent);
+            box-shadow: 0 0 50px rgba(44, 182, 125, 0.05);
+        }
+        h1 { color: var(--accent); margin-top: 0; }
+        
+        input, textarea {
+            width: 100%; background: #121216; border: 1px solid #444; color: #2cb67d;
+            padding: 15px; border-radius: 5px; font-family: 'Consolas', monospace; margin-top: 10px;
+            box-sizing: border-box; font-size: 1rem;
+        }
+        textarea { height: 200px; resize: vertical; }
+        
+        .btn {
+            background: var(--accent); color: #fff; border: none; padding: 12px 25px; border-radius: 5px;
+            cursor: pointer; font-weight: bold; margin-top: 15px; transition: 0.2s; font-family: 'Segoe UI', sans-serif;
+            text-decoration: none; display: inline-block; font-size: 1rem;
+        }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .btn-secondary { background: #444; }
+
+        /* MODAL */
+        .modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.8); backdrop-filter: blur(5px); }
+        .modal-content { background-color: var(--card); margin: 5% auto; padding: 40px; border: 1px solid var(--accent); width: 80%; max-width: 700px; border-radius: 10px; font-family: 'Segoe UI', sans-serif; }
+        .close { float: right; font-size: 28px; cursor: pointer; }
+        .step { margin-bottom: 15px; padding-left: 15px; border-left: 3px solid var(--accent); }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <a href="index.html" class="logo">W1nDoxx <span style="font-size: 0.8em; color: var(--accent);">// DEV</span></a>
+        <div class="nav-links">
+            <a href="index.html">Головна</a>
+            <a href="plugins.html" class="active">Майстерня</a>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="ai-box">
+            <h1>🤖 AI Plugin Generator</h1>
+            <p style="color: var(--subtext);">Опиши, що повинен робити плагін, і отримай готовий C# код.</p>
+            
+            <label>Завдання для плагіна:</label>
+            <input type="text" id="userIdea" placeholder="Приклад: Видалити всі файли .log у папці C:\MyApp\Logs">
+            
+            <button onclick="generatePrompt()" class="btn">✨ Згенерувати код (Промпт)</button>
+
+            <br><br><br>
+            <label>Скопіюй цей текст у ChatGPT:</label>
+            <textarea id="resultPrompt" readonly></textarea>
+            
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button onclick="copyToClipboard()" class="btn btn-secondary">📋 Скопіювати</button>
+                <button onclick="openModal()" class="btn btn-secondary">📚 Інструкція встановлення</button>
+                <a href="W1nDoxx.Core.dll" download class="btn" style="background: #7f5af0;">⬇️ Завантажити Core.dll</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="guideModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h2 style="color: white; margin-top: 0;">🛠️ Як створити .DLL</h2>
+            <div class="step"><strong>1. Проект:</strong> Створіть "Class Library (.NET)" у Visual Studio.</div>
+            <div class="step"><strong>2. Ядро:</strong> Завантажте <b>W1nDoxx.Core.dll</b> (кнопка на сайті) і додайте його в References.</div>
+            <div class="step"><strong>3. Код:</strong> Вставте код, який згенерував ChatGPT.</div>
+            <div class="step"><strong>4. Збірка:</strong> Натисніть Build. Отриманий .dll файл киньте в папку <b>Plugins</b>.</div>
+        </div>
+    </div>
+
+    <script>
+        function generatePrompt() {
+            const i = document.getElementById("userIdea").value;
+            if(!i) return alert("Напиши ідею!");
+            const p = `Привіт! Напиши C# клас для плагіна W1nDoxx.
+Завдання: "${i}".
+1. Реалізуй інтерфейс ICleanerPlugin (з using W1nDoxx.Plugins).
+2. Метод EstimatePaths() має повертати Dictionary<string, long> (шлях і розмір).
+3. Метод CleanAsync() має повертати об'єкт CleanResult (поля: bytesFreed, filesDeleted, Errors).
+4. Використовуй try-catch.
+Напиши тільки код класу.`;
+            document.getElementById("resultPrompt").value = p;
+        }
+        function copyToClipboard() {
+            document.getElementById("resultPrompt").select();
+            document.execCommand("copy");
+            alert("Скопійовано!");
+        }
+        var m = document.getElementById("guideModal");
+        function openModal() { m.style.display = "block"; }
+        function closeModal() { m.style.display = "none"; }
+        window.onclick = function(e) { if (e.target == m) closeModal(); }
+    </script>
+</body>
+</html>
